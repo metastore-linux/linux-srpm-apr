@@ -3,33 +3,33 @@
 # Arches on which the multilib apr.h hack is needed:
 %define multilib_arches %{ix86} ia64 ppc ppc64 s390 s390x x86_64
 
-Name:               apr
-Version:            1.6.3
-Release:            2%{?dist}
-Summary:            Apache Portable Runtime library
-Group:              System Environment/Libraries
+Name:                   apr
+Version:                1.6.3
+Release:                2%{?dist}
+Summary:                Apache Portable Runtime library
+Group:                  System Environment/Libraries
 # ASL 2.0: everything
 # ISC: network_io/apr-1.4.6/network_io/unix/inet_?to?.c
 # BSD with advertising: strings/apr_snprintf.c, strings/apr_fnmatch.c,
 #                   include/apr_fnmatch.h, misc/unix/getopt.c,
 #                   file_io/unix/mktemp.c, strings/apr_strings.c
 # BSD (3-clause): strings/apr_strnatcmp.c, include/apr_strings.h
-License:            ASL 2.0 and BSD with advertising and ISC and BSD
-URL:                http://apr.apache.org/
+License:                ASL 2.0 and BSD with advertising and ISC and BSD
+URL:                    http://apr.apache.org/
 
-Source0:            https://www.apache.org/dist/apr/%{name}-%{version}.tar.bz2
-Source1:            apr-wrapper.h
+Source0:                https://www.apache.org/dist/apr/%{name}-%{version}.tar.bz2
+Source1:                apr-wrapper.h
 # PGP signature
-Source100:          https://www.apache.org/dist/apr/%{name}-%{version}.tar.bz2.asc
+Source100:              https://www.apache.org/dist/apr/%{name}-%{version}.tar.bz2.asc
 
-Patch2:             apr-1.2.2-locktimeout.patch
-Patch3:             apr-1.2.2-libdir.patch
-Patch4:             apr-1.2.7-pkgconf.patch
+Patch2:                 apr-1.2.2-locktimeout.patch
+Patch3:                 apr-1.2.2-libdir.patch
+Patch4:                 apr-1.2.7-pkgconf.patch
 
-BuildRoot:          %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-BuildRequires:      autoconf, libtool, libuuid-devel, python
+BuildRoot:              %{_tmppath}/%{name}-%{version}-%{release}-buildroot
+BuildRequires:          autoconf, libtool, libuuid-devel, python
 # To enable SCTP support
-BuildRequires:      lksctp-tools-devel
+BuildRequires:          lksctp-tools-devel
 
 %description
 The mission of the Apache Portable Runtime (APR) is to provide a
@@ -42,15 +42,15 @@ including Unices, MS Win32, BeOS and OS/2.
 # -------------------------------------------------------------------------------------------------------------------- #
 
 %package devel
-Group:              Development/Libraries
-Summary:            APR library development kit
-Conflicts:          subversion-devel < 0.20.1-2
-Requires:           apr = %{version}-%{release}, pkgconfig
+Group:                  Development/Libraries
+Summary:                APR library development kit
+Conflicts:              subversion-devel < 0.20.1-2
+Requires:               apr = %{version}-%{release}, pkgconfig
 
 %description devel
-This package provides the support files which can be used to 
+This package provides the support files which can be used to
 build applications using the APR library.  The mission of the
-Apache Portable Runtime (APR) is to provide a free library of 
+Apache Portable Runtime (APR) is to provide a free library of
 C data structures and routines.
 
 # -------------------------------------------------------------------------------------------------------------------- #
@@ -93,7 +93,7 @@ sed -ri '/^Libs/{s,-l(uuid|crypt) ,,g}' \
       $RPM_BUILD_ROOT%{_libdir}/pkgconfig/apr-%{aprver}.pc
 
 %ifarch %{multilib_arches}
-# Ugly hack to allow parallel installation of 32-bit and 64-bit apr-devel 
+# Ugly hack to allow parallel installation of 32-bit and 64-bit apr-devel
 # packages:
 mv $RPM_BUILD_ROOT%{_includedir}/apr-%{aprver}/apr.h \
    $RPM_BUILD_ROOT%{_includedir}/apr-%{aprver}/apr-%{_arch}.h
@@ -398,7 +398,7 @@ rm -rf $RPM_BUILD_ROOT
 - add apr_file_seek() fixes from upstream (r326593, r326597)
 
 * Wed Dec  7 2005 Joe Orton <jorton@redhat.com> 1.2.2-3
-- apr-1-config: strip more exports (#175124) 
+- apr-1-config: strip more exports (#175124)
 
 * Tue Dec  6 2005 Joe Orton <jorton@redhat.com> 1.2.2-2
 - avoid linking against -lrt
