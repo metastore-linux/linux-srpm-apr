@@ -4,10 +4,9 @@
 %define multilib_arches %{ix86} ia64 ppc ppc64 s390 s390x x86_64
 
 Name:                   apr
-Version:                1.6.3
+Version:                1.6.5
 Release:                2%{?dist}
 Summary:                Apache Portable Runtime library
-Group:                  System Environment/Libraries
 # ASL 2.0: everything
 # ISC: network_io/apr-1.4.6/network_io/unix/inet_?to?.c
 # BSD with advertising: strings/apr_snprintf.c, strings/apr_fnmatch.c,
@@ -15,19 +14,22 @@ Group:                  System Environment/Libraries
 #                   file_io/unix/mktemp.c, strings/apr_strings.c
 # BSD (3-clause): strings/apr_strnatcmp.c, include/apr_strings.h
 License:                ASL 2.0 and BSD with advertising and ISC and BSD
-URL:                    http://apr.apache.org/
+Group:                  System Environment/Libraries
+URL:                    https://apr.apache.org/
 
-Source0:                https://www.apache.org/dist/apr/%{name}-%{version}.tar.bz2
+Source0:                https://apache.org/dist/apr/%{name}-%{version}.tar.bz2
 Source1:                apr-wrapper.h
-# PGP signature
-Source100:              https://www.apache.org/dist/apr/%{name}-%{version}.tar.bz2.asc
 
+# METASTORE - [
+# Signature
+Source900:              https://apache.org/dist/apr/%{name}-%{version}.tar.bz2.asc
+# ] - METASTORE
+
+Patch1:                 apr-1.6.3-r1834495.patch
 Patch2:                 apr-1.2.2-locktimeout.patch
 Patch3:                 apr-1.2.2-libdir.patch
 Patch4:                 apr-1.2.7-pkgconf.patch
-
-BuildRoot:              %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-BuildRequires:          autoconf, libtool, libuuid-devel, python
+BuildRequires:          gcc, autoconf, libtool, libuuid-devel, python%{python3_pkgversion}
 # To enable SCTP support
 BuildRequires:          lksctp-tools-devel
 
@@ -48,9 +50,9 @@ Conflicts:              subversion-devel < 0.20.1-2
 Requires:               apr = %{version}-%{release}, pkgconfig
 
 %description devel
-This package provides the support files which can be used to
+This package provides the support files which can be used to 
 build applications using the APR library.  The mission of the
-Apache Portable Runtime (APR) is to provide a free library of
+Apache Portable Runtime (APR) is to provide a free library of 
 C data structures and routines.
 
 # -------------------------------------------------------------------------------------------------------------------- #
@@ -59,6 +61,7 @@ C data structures and routines.
 
 %prep
 %setup -q
+%patch1 -p1 -b .r1834495
 %patch2 -p1 -b .locktimeout
 %patch3 -p1 -b .libdir
 %patch4 -p1 -b .pkgconf
@@ -72,9 +75,9 @@ C data structures and routines.
 export ac_cv_search_shm_open=no
 
 %configure \
-        --includedir=%{_includedir}/apr-%{aprver} \
-        --with-installbuilddir=%{_libdir}/apr-%{aprver}/build \
-        --with-devrandom=/dev/urandom
+    --includedir=%{_includedir}/apr-%{aprver} \
+    --with-installbuilddir=%{_libdir}/apr-%{aprver}/build \
+    --with-devrandom=/dev/urandom
 make %{?_smp_mflags}
 
 %install
@@ -86,48 +89,47 @@ install -m 644 build/find_apr.m4 $RPM_BUILD_ROOT/%{_datadir}/aclocal
 
 # Trim exported dependecies
 sed -ri '/^dependency_libs/{s,-l(uuid|crypt) ,,g}' \
-      $RPM_BUILD_ROOT%{_libdir}/libapr*.la
+    $RPM_BUILD_ROOT%{_libdir}/libapr*.la
 sed -ri '/^LIBS=/{s,-l(uuid|crypt) ,,g;s/  */ /g}' \
-      $RPM_BUILD_ROOT%{_bindir}/apr-%{aprver}-config
+    $RPM_BUILD_ROOT%{_bindir}/apr-%{aprver}-config
 sed -ri '/^Libs/{s,-l(uuid|crypt) ,,g}' \
-      $RPM_BUILD_ROOT%{_libdir}/pkgconfig/apr-%{aprver}.pc
+    $RPM_BUILD_ROOT%{_libdir}/pkgconfig/apr-%{aprver}.pc
 
 %ifarch %{multilib_arches}
-# Ugly hack to allow parallel installation of 32-bit and 64-bit apr-devel
+# Ugly hack to allow parallel installation of 32-bit and 64-bit apr-devel 
 # packages:
 mv $RPM_BUILD_ROOT%{_includedir}/apr-%{aprver}/apr.h \
-   $RPM_BUILD_ROOT%{_includedir}/apr-%{aprver}/apr-%{_arch}.h
+    $RPM_BUILD_ROOT%{_includedir}/apr-%{aprver}/apr-%{_arch}.h
 install -c -m644 %{SOURCE1} $RPM_BUILD_ROOT%{_includedir}/apr-%{aprver}/apr.h
 %endif
 
 # Unpackaged files:
 rm -f $RPM_BUILD_ROOT%{_libdir}/apr.exp \
-      $RPM_BUILD_ROOT%{_libdir}/libapr-*.a
+    $RPM_BUILD_ROOT%{_libdir}/libapr-*.a
 
 %check
 # Fail if LFS support isn't present in a 32-bit build, since this
 # breaks ABI and the soname doesn't change: see #254241
 if grep 'define SIZEOF_VOIDP 4' include/apr.h \
-   && ! grep off64_t include/apr.h; then
-  cat config.log
-  : LFS support not present in 32-bit build
-  exit 1
+    && ! grep off64_t include/apr.h; then
+    cat config.log
+    : LFS support not present in 32-bit build
+    exit 1
 fi
-
-%clean
-rm -rf $RPM_BUILD_ROOT
+pushd test
+    make %{?_smp_mflags}
+    ./testall -v -q
+popd
 
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
 
 %files
-%defattr(-,root,root,-)
 %doc CHANGES LICENSE NOTICE
 %{_libdir}/libapr-%{aprver}.so.*
 
 %files devel
-%defattr(-,root,root,-)
 %doc docs/APRDesign.html docs/canonical_filenames.html
 %doc docs/incomplete_types docs/non_apr_programs
 %{_bindir}/apr-%{aprver}-config
@@ -142,9 +144,36 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/aclocal/*.m4
 
 %changelog
-* Sat Dec 16 2017 Kitsune Solar <kitsune.solar@gmail.com> - 1.6.3-2
-- Build from RHEL7
-- Disable: (RHEL7) Test suite
+* Thu Nov 01 2018 Kitsune Solar <kitsune.solar@gmail.com> - 1.6.5-2
+- Build for EL7.
+
+* Mon Sep 17 2018 Joe Orton <jorton@redhat.com> - 1.6.5-1
+- update to 1.6.5 (#1628934)
+
+* Thu Jul 12 2018 Fedora Release Engineering <releng@fedoraproject.org> - 1.6.3-9
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_29_Mass_Rebuild
+
+* Wed Jun 27 2018 Joe Orton <jorton@redhat.com> - 1.6.3-8
+- update to use Python 3 at build time
+
+* Wed Mar 14 2018 Iryna Shcherbina <ishcherb@redhat.com> - 1.6.3-7
+- Update Python 2 dependency declarations to new packaging standards
+  (See https://fedoraproject.org/wiki/FinalizingFedoraSwitchtoPython3)
+
+* Wed Feb 21 2018 Joe Orton <jorton@redhat.com> - 1.6.3-6
+- BuildRequires: gcc
+
+* Wed Feb 07 2018 Fedora Release Engineering <releng@fedoraproject.org> - 1.6.3-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_28_Mass_Rebuild
+
+* Mon Jan 29 2018 Florian Weimer <fweimer@redhat.com> - 1.6.3-4
+- Fix FTBFS in test/teststr.c with GCC 8 (#1539844)
+
+* Mon Jan 29 2018 Florian Weimer <fweimer@redhat.com> - 1.6.3-3
+- Rebuild with new redhat-rpm-config build flags
+
+* Sat Jan 20 2018 Björn Esser <besser82@fedoraproject.org> - 1.6.3-2
+- Rebuilt for switch to libxcrypt
 
 * Wed Oct 25 2017 Luboš Uhliarik <luhliari@redhat.com> - 1.6.3-1
 - new version 1.6.3
@@ -398,7 +427,7 @@ rm -rf $RPM_BUILD_ROOT
 - add apr_file_seek() fixes from upstream (r326593, r326597)
 
 * Wed Dec  7 2005 Joe Orton <jorton@redhat.com> 1.2.2-3
-- apr-1-config: strip more exports (#175124)
+- apr-1-config: strip more exports (#175124) 
 
 * Tue Dec  6 2005 Joe Orton <jorton@redhat.com> 1.2.2-2
 - avoid linking against -lrt
